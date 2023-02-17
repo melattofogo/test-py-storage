@@ -1,0 +1,189 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.14.4
+  kernelspec:
+    display_name: localy
+    language: python
+    name: localy
+---
+
+https://www.youtube.com/watch?v=u4rsA5ZiTls
+
+```{python}
+import pandas as pd
+import numpy as np
+```
+
+```{python}
+def get_dataset(size):
+    # Create Fake Dataset
+    df = pd.DataFrame()
+    df['size'] = np.random.choice(['big', 'medium', 'small'], size)
+    df['age'] = np.random.randint(1, 50, size)
+    df['team'] = np.random.choice(['red', 'blue', 'yellow', 'green'], size)
+    df['win'] = np.random.choice(['yea', 'no'], size)
+    dates = pd.date_range('2020-01-01', '2022-12-31')
+    df['date'] = np.random.choice(dates, size)
+    df['prob'] = np.random.uniform(0, 1, size)
+    return df
+
+def set_dtypes(df):
+    df['size'] = df['size'].astype('category')
+    #df['age'] = df['age'].astype('int16')
+    df['team'] = df['team'].astype('category')
+    df['win'] = df['win'].map({'yes':True, 'no': False})
+    #df['prob'] = df['prob'].astype('float16')
+    return df
+```
+
+```{python}
+df = get_dataset(1_000_000)
+```
+
+```{python}
+df.info()
+```
+
+## CSV
+- Without dtype:
+    - 42MB in memory
+    - 53MB in storage
+    - 15.4s to save
+    - 697ms to read
+- With dtypes:
+    - 21MB in memory
+    - 41MB in storage
+    - 13s to save
+    - 537ms to read
+
+```{python}
+# %%timeit
+#df.to_csv('test_csv.csv', index=False)
+df.to_csv('test_csv.csv')
+```
+
+```{python}
+# !dir .\test_csv.csv
+```
+
+```{python}
+# %%timeit
+df = pd.read_csv('test_csv.csv', index_col=[0])
+```
+
+```{python}
+df = get_dataset(1_000_000)
+set_dtypes(df)
+df.info()
+```
+
+```{python}
+# %%timeit
+#df.to_csv('test_csv.csv', index=False)
+df.to_csv('test_csv.csv')
+```
+
+```{python}
+# !dir .\test_csv.csv
+```
+
+```{python}
+# %%timeit
+df = pd.read_csv('test_csv.csv',
+                 index_col=[0],
+                dtype={'size': 'category',
+                       'int64': 'int16',
+                       'team': 'category'})
+```
+
+# Pickle
+- 21MB in memory
+- 38.8MB in storage
+- 1s to save
+- 391ms to read
+
+```{python}
+df = get_dataset(1_000_000)
+# %timeit df.to_pickle('test.pickle')
+# %timeit df_pickle = pd.read_pickle('test.pickle')
+```
+
+```{python}
+# !dir .\test.pickle
+```
+
+```{python}
+df = get_dataset(1_000_000)
+set_dtypes(df)
+# %timeit df.to_pickle('test.pickle')
+# %timeit df_pickle = pd.read_pickle('test.pickle')
+```
+
+```{python}
+df_pickle = pd.read_pickle('test.pickle')
+```
+
+```{python}
+df_pickle.info()
+```
+
+# Parquet
+Requirements
+```
+!pip install pyarrow
+!pip install fastparquet
+```
+
+- 26.8MB in memory
+- 10.5MB in storage
+- 201ms to save
+- 50ms to read
+
+```{python}
+df = get_dataset(1_000_000)
+set_dtypes(df)
+# %timeit df.to_parquet('test.parquet')
+# %timeit df_parquet = pd.read_parquet('test.parquet')
+```
+
+```{python}
+df_parquet = pd.read_parquet('test.parquet')
+```
+
+```{python}
+df_parquet.info()
+```
+
+```{python}
+# !dir .\test.parquet
+```
+
+# Feather
+- 28.6MB in memory
+- 13.6MB in storage
+- 61.8ms to save
+- 31.4ms to read
+
+```{python}
+df = get_dataset(1_000_000)
+set_dtypes(df)
+# %timeit df.to_feather('test.feather')
+# %timeit df_feather = pd.read_feather('test.feather')
+```
+
+```{python}
+df_feather = pd.read_feather('test.feather')
+```
+
+```{python}
+df_feather.info()
+```
+
+```{python}
+# !dir .\test.feather
+```
